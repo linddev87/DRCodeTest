@@ -10,6 +10,9 @@ var hourlyMaintenance = {
 	},
 
 	_setCountryCases: function(jsonResult){
+		//Remove the "Global" object from the json response from the Covid API as it follows a different format. 
+		delete jsonResult['Global'];
+
 		for(obj in jsonResult){
 			try{
 				const newCountryCases = this._countryCasesFromJson(jsonResult[obj]);
@@ -30,8 +33,8 @@ var hourlyMaintenance = {
 		}
 	},
 
+	
 	_countryCasesFromJson: function(countryData){
-
 		return new CountryCases({
 			countryName: countryData['All'].country,
 			countryCode: countryData['All'].abbreviation,

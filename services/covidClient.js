@@ -3,9 +3,17 @@ const axios = require('axios');
 var covidClient = {
 	_baseUrl: 'https://covid-api.mmediagroup.fr/v1',
 
-	getAllCountryCases: async function(){
+	getAllCountryCases: function(){
+		return this._getRequest('/cases');
+	},
+
+	getAllCountryVaccines: function(){
+		return this._getRequest('/vaccines');
+	},
+
+	_getRequest: async function(endpoint){
 		try{
-			const response = await axios.get(this._baseUrl + '/cases');
+			const response = await axios.get(this._baseUrl + endpoint);
 			return response.data;
 		}
 		catch(error){

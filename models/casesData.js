@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-let countryCasesSchema = new mongoose.Schema ({
+let casesDataSchema = new mongoose.Schema ({
 	countryName: String,
 	countryCode: String,
 	confirmed: Number,
@@ -9,6 +9,6 @@ let countryCasesSchema = new mongoose.Schema ({
 	updated: Date
 });
 
-const CountryCases = mongoose.model('CountryCases', countryCasesSchema);
+const CasesData = mongoose.model('CasesData', casesDataSchema);
 
-module.exports = CountryCases;
+module.exports = CasesData;

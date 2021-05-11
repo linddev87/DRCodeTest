@@ -3,11 +3,11 @@ const axios = require('axios');
 var covidClient = {
 	_baseUrl: 'https://covid-api.mmediagroup.fr/v1',
 
-	getAllCountryCases: function(){
+	getAllCasesData: function(){
 		return this._getRequest('/cases');
 	},
 
-	getAllCountryVaccines: function(){
+	getAllVaccinesData: function(){
 		return this._getRequest('/vaccines');
 	},
 

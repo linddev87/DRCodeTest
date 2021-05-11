@@ -1,18 +1,26 @@
-const mongoose = require('mongoose');
+const CasesData = require('./casesData');
+const VaccinesData = require('./casesData');
 
-let countryReportSchema = new mongoose.Schema ({
-	countryCode: String,
-	countryName: String
-});
+var countryReport = {
+	getByCountryCode: async function(code){
+		const casesData = await CasesData.findOne({countryCode: code}).sort({updated: -1}).exec();
+		const vaccinesData = await VaccinesData.findOne({countryCode: code}).sort({updated: -1}).exec();
 
-countryReportSchema.methods.consoleLog = function(){
-	const report = this.countryCode
-		? 'Country code: ' + this.countryCode + ', CountryName: ' + this.countryName
-		: 'I am empty!'; 
+		return this._buildJsonResponse(casesData, vaccinesData);
+	},
 
-	console.log(report);
+	_buildJsonResponse(casesData, vaccinesData){
+		const countryReport = {
+			confirmed: casesData.confirmed,
+			recovered: casesData.recovered,
+			deaths: casesData.deaths,
+			vaccinated: vaccinesData.vaccinated,
+			fatalityRate: ( casesData.deaths / casesData.confirmed * 100 ),
+			vaccinationCompletionRate: ( vaccinesData.peopleVaccinated / vaccinesData.population * 100)
+		}
+
+		return countryReport;
+	}
 }
 
-const CountryReport = mongoose.model('CountryReport', countryReportSchema);
-
-module.exports = CountryReport;
+module.exports = countryReport;

@@ -13,12 +13,8 @@ const app = express();
 const port = 3000;
 
 // Set routes
-app.get('/bycountrycode/:countrycode', function(req, res){
+app.get('/bycountrycode/:countryCode', function(req, res){
 	controller.reportByCountryCode(req, res);
-})
-
-app.get('/bycountrycode', function(req, res){
-	res.send('Yo');
 })
 
 // Run database update and schedule hourly run

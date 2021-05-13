@@ -13,7 +13,7 @@ const app = express();
 const port = 3000;
 
 // Set routes
-app.get('/bycountrycode/:countryCode', function(req, res){
+app.get('/reportbycountrycode/:countryCode', function(req, res){
 	controller.reportByCountryCode(req, res);
 })
 

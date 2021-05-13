@@ -1,11 +1,11 @@
 const CasesData = require('./casesData');
-const VaccinesData = require('./casesData');
+const VaccinesData = require('./vaccinesData');
 
 var countryReport = {
 	getByCountryCode: async function(code){
 		let casesData = await CasesData.findOne({countryCode: code}).sort({updated: -1}).exec();
 		let vaccinesData = await VaccinesData.findOne({countryCode: code}).sort({updated: -1}).exec();
-
+		console.log(vaccinesData);
 		return this._buildJsonResponse(casesData, vaccinesData);
 	},
 
@@ -14,7 +14,7 @@ var countryReport = {
 			confirmed: casesData.confirmed,
 			recovered: casesData.recovered,
 			deaths: casesData.deaths,
-			vaccinated: vaccinesData.vaccinated,
+			vaccinated: vaccinesData.peopleVaccinated,
 			fatalityRate: ( casesData.deaths / casesData.confirmed * 100 ).toFixed(2),
 			vaccinationCompletionRate: ( vaccinesData.peopleVaccinated / vaccinesData.population * 100).toFixed(2)
 		}

@@ -1,6 +1,7 @@
 const covidCLient = require('./covidClient');
 const CasesData = require('../models/casesData');
 const VaccinesData = require('../models/vaccinesData');
+const FatalityReport = require('../models/fatalityReport');
 const { json } = require('express');
 
 var hourlyMaintenance = {
@@ -10,6 +11,8 @@ var hourlyMaintenance = {
 
 		this._saveCasesData(casesJsonResult);
 		this._saveVaccinesData(vaccinesJsonResult);
+
+		await FatalityReport.updateReports();
 	},
 
 	_saveCasesData: function(jsonResult){

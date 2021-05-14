@@ -21,6 +21,15 @@ let controllers = {
 		res.send(report);
 	},
 
+	reportList: async function(req, res) {
+		const reports = await countryReport.listAll()
+			.catch(function (err) {
+				console.log(err.message);
+			});
+
+		res.send(reports);
+	},
+
 	fatalityReport: async function(req, res){
 		const reportList = await fatalityReport.getTopCountries(req.query)
 			.catch(function(err){

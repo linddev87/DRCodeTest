@@ -1,79 +1,109 @@
-const covidCLient = require('./covidClient');
-const CasesData = require('../models/casesData');
-const VaccinesData = require('../models/vaccinesData');
+const covidClient = require('./covidClient');
+const CountryData = require('../models/countryData');
 const FatalityReport = require('../models/fatalityReport');
-const { json } = require('express');
 
 var hourlyMaintenance = {
 	run: async function(){
-		const casesJsonResult = await covidCLient.getAllCasesData();
-		const vaccinesJsonResult = await covidCLient.getAllVaccinesData();
+		const casesJsonResult = await covidClient.getAllCasesData();
+		const vaccinesJsonResult = await covidClient.getAllVaccinesData();
 
-		this._saveCasesData(casesJsonResult);
-		this._saveVaccinesData(vaccinesJsonResult);
-
-		await FatalityReport.updateReports();
+		const dataCollection = this._initDataCollection(casesJsonResult, vaccinesJsonResult);
+		this._updateCountryData(dataCollection);
 	},
 
-	_saveCasesData: function(jsonResult){
-		//Remove the "Global" object from the json response from the Covid API as it follows a different format. 
-		delete jsonResult['Global'];
+	_updateCountryData(inputData){
+		for(let i in inputData.casesDataArr){
+			const countryInfo = inputData.countryDataArr[i];
+			const casesData = inputData.casesDataArr.find(c => c.countryCode === countryInfo.countryCode);
+			const vaccinesData = inputData.vaccinesDataArr.find(v => v.countryCode === countryInfo.countryCode);
 
-		for(obj in jsonResult){
-			try{
-				const newCasesData = this._casesDataFromJsonResult(jsonResult[obj]);
-
-				CasesData.findOne({countryName: newCasesData.countryName, updated: newCasesData.updated}, function(err, oldCasesData){
-					if(!oldCasesData){
-						newCasesData.save();
-					}
-				});
-			}
-			catch(err){
-				console.log(`Cases import for ${obj} failed: ${err.message}`);
-			}
-		}
-	},
-
-	_saveVaccinesData: function(jsonResult){
-		for(obj in jsonResult){
-			if(jsonResult[obj]['All'].country !== undefined){
+			if(countryInfo && casesData && vaccinesData){
 				try{
-					const newVaccinesData = this._vaccinesDataFromJsonResult(jsonResult[obj]);
-					
-					VaccinesData.findOne({countryName: newVaccinesData.countryName, updated: newVaccinesData.updated}, function( err, oldVaccinesData){
-						if(!oldVaccinesData){
-							newVaccinesData.save();
-						}
-					});
+					const countryData = this._newCountryData(countryInfo, casesData, vaccinesData);
+					countryData.save();
 				}
 				catch(err){
-					console.log(`Vaccines import for ${obj} failed: ${err.message}`);
+					console.log(err.message);
 				}
 			}
 		}
+	},
+
+	_initDataCollection: function(casesJson, vaccinesJson){
+
+		let data = {
+			countryDataArr: [],
+			casesDataArr: [],
+			vaccinesDataArr: []
+		}
+
+		for(let i in casesJson){
+
+			data.countryDataArr.push(this._countryDataFromJsonResult(casesJson[i]));
+		}
+
+		for(let i in casesJson){
+			data.casesDataArr.push(this._casesDataFromJsonResult(casesJson[i]));
+		}
+
+		for(let i in vaccinesJson){
+			data.vaccinesDataArr.push(this._vaccinesDataFromJsonResult(vaccinesJson[i]));
+		}
+
+		return data;
+	},
+
+	_countryDataFromJsonResult(casesData) {
+		return {
+			countryName: casesData['All'].country,
+			countryCode: casesData['All'].abbreviation,
+			population: casesData['All'].population,
+			squareKm: casesData['All'].sq_km_area,
+			continent: casesData['All'].continent,
+			updated: Date.now()
+		};
 	},
 
 	_casesDataFromJsonResult: function(casesData){
-		return new CasesData({
-			countryName: casesData['All'].country,
+		return {
 			countryCode: casesData['All'].abbreviation,
 			confirmed: casesData['All'].confirmed,
 			recovered: casesData['All'].recovered,
-			deaths: casesData['All'].deaths,
-			updated: casesData['All'].updated ? casesData['All'].updated : casesData[Object.keys(casesData)[1]].updated
-		});
+			deaths: casesData['All'].deaths
+		}
 	},
 
 	_vaccinesDataFromJsonResult: function(vaccinesData){
-		return new VaccinesData({
-			countryName: vaccinesData['All'].country,
+		return {
 			countryCode: vaccinesData['All'].abbreviation,
 			population: vaccinesData['All'].population,
 			administered: vaccinesData['All'].administered,
 			peopleVaccinated: vaccinesData['All'].people_vaccinated,
-			peoplePartiallyVaccinated: vaccinesData['All'].people_partially_vaccinated,
-			updated: vaccinesData['All'].updated,
+			peoplePartiallyVaccinated: vaccinesData['All'].people_partially_vaccinated
+		};
+	},
+
+	_newCountryData(country, cases, vaccines) {
+		return new CountryData({
+			countryName: country.countryName,
+			countryCode: country.countryCode,
+			population: country.population,
+			squareKm: country.squareKm,
+			continent: country.continent,
+			updated: country.updated,
+			cases:{
+				confirmed: cases.confirmed,
+				recovered: cases.recovered,
+				deaths: cases.deaths,
+				updated: cases.updated,
+				fatalityRate: (cases.deaths / cases.confirmed * 100).toFixed(2)
+			},
+			vaccines: {
+				administered: vaccines.administered,
+				peopleVaccinated: vaccines.peopleVaccinated,
+				peoplePartiallyVaccinated: vaccines.peoplePartiallyVaccinated,
+				vaccinationCompletionRate: vaccines.peopleVaccinated ? (vaccines.peopleVaccinated / country.population * 100).toFixed(2) : 0
+			}
 		});
 	}
 }

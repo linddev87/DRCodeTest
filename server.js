@@ -17,6 +17,10 @@ app.get('/countryreport/:countryCode/bycountrycode', function(req, res){
 	controller.reportByCountryCode(req, res);
 })
 
+app.get('/countryreport', function(req, res){
+	controller.reportList(req, res);
+})
+
 app.get('/fatalityReport', function(req,res){
 	controller.fatalityReport(req,res);
 })

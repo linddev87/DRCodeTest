@@ -1,40 +1,47 @@
-const CountryReport = require('./countryReport');
+const CountryData = require('./countryData');
 
 let fatalityReport = {
-    _countryReports: [],
+    _countryDataArr: [],
 
     getTopCountries: async function(query){
         const reports = await this._getCountryReports();
-        const topCountries = [];
+        const filteredReports = reports.slice(0, query.amount);
+        let response = [];
 
-        for(let i = 0; i < query.top; i++){
-            const entry = this._getCountryFatalityEntry(reports[i]);
-
-            topCountries.push(entry);
+        for(let i in filteredReports){
+            response.push(this._getCountryFatalityEntry(filteredReports[i]));
         }
-
-        return topCountries;
+        return response;
     },
 
-    updateReports: async function(){
-        const reports = await CountryReport.listAll();
-        const sortedReports = reports.sort((a, b) => (a.fatalityRate > b.fatalityRate) ? -1 : 1);
-
-        this._countryReports = sortedReports;
+    _getCountryReports: async function(){
+        if(this._countryDataArr.length > 0){
+            return this._countryDataArr;
+        }
+        else {
+            await this._setCountryReports();
+            return this._countryDataArr;
+        }
     },
 
-    _getCountryReports: async function (){
-        if(this._countryReports.length == 0){
-            await this.updateReports();
+    _setCountryReports: async function (){
+        const countryCodes = await CountryData.distinct("countryCode").exec();
+        let countryDataArr = [];
+
+        for(let i in countryCodes){
+            const countryData = await CountryData.findOne({countryCode: countryCodes[i]}).sort({updated: -1}).limit(1).exec();
+            countryDataArr.push(countryData);
         }
 
-        return this._countryReports;
+        this._countryDataArr = countryDataArr.sort((a, b) => (a.cases.fatalityRate > b.cases.fatalityRate) ? -1 : 1);
     },
 
     _getCountryFatalityEntry: function(countryData){
+
+        console.log(countryData);
         return {
             country: countryData.countryName,
-            fatalityRate: countryData.fatalityRate
+            fatalityRate: countryData.cases.fatalityRate
         }
     }
 }

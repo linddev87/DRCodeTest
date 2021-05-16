@@ -1,46 +1,27 @@
-const CountryData = require('./countryData');
+const LatestCountryData = require('./latestCountryData');
 
 let countryReports = {
-	_publicCountryReports: [],
+	// Fetch latestCountryData from the LatestCountryData module => create publicCountryReports and return them.
+	getAllPublicReports: async function(){
+		const latestCountryDataArr = await LatestCountryData.get();
+		let publicCountryReports = [];
 
-	listAll: async function(){
-		return this._getAllPublicReports();
-	},
-
-	getByCountryCode: async function(code){
-		const countryReport = await CountryData.find({countryCode: code}).sort({updated: -1}).limit(1).exec();
-
-    	return this._buildPublicReport(countryReport[0]);
-	},
-
-	_getAllPublicReports: async function() {
-		if(this._publicCountryReports.length == 0){
-			await this._updateCountryReports();
-			return this._publicCountryReports;
+		for(let i in latestCountryDataArr){
+			publicCountryReports.push(await this._buildPublicReport(latestCountryDataArr[i]));
 		}
 
-		return this._publicCountryReports;
+		return publicCountryReports;
 	},
 
-	_updateCountryReports: async function(){
-		let countryReports = [];
-		const countryCodes = await CountryData.distinct("countryCode").exec()
-			.catch(function(err) {
-				console.log(err.message);
-			});
+	// Fetch one countryData from the LatestCountryData module => Convert to public report and return that.
+	getPublicReportByCountryCode: async function(code){
+		const countryData = await LatestCountryData.findByCountryCode(code);
+		return this._buildPublicReport(countryData);
 
-		for(let i in countryCodes){
-			const report = await CountryData.findOne({countryCode: countryCodes[i]}).exec();
-			if(report){
-				const publicReport = this._buildPublicReport(report);
-				countryReports.push(publicReport);
-			}
-		}
-
-		this._publicCountryReports = countryReports.sort((a, b) => (a.country > b.country) ? -1 : 1);
 	},
 
-	_buildPublicReport(countryData){
+	// Build a public report json response based on the full CountryReport object.
+	_buildPublicReport: async function(countryData){
 		return {
 			countryCode: countryData.countryCode,
 			data: {

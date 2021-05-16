@@ -1,7 +1,9 @@
 const axios = require('axios');
+const config = require('../config.json');
 
+// Simple client to consume m media group api
 var covidClient = {
-	_baseUrl: 'https://covid-api.mmediagroup.fr/v1',
+	_baseUrl: config.apiBaseUrl,
 
 	getAllCasesData: function(){
 		return this._getRequest('/cases');

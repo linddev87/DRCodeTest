@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 
+// Mongo DB Document Schema
 let countryDataSchema = new mongoose.Schema({
     countryName: String,
     countryCode: String,

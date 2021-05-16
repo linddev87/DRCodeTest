@@ -8,10 +8,10 @@ var hourlyMaintenance = {
 		const vaccinesJsonResult = await covidClient.getAllVaccinesData();
 
 		const dataCollection = this._initDataCollection(casesJsonResult, vaccinesJsonResult);
-		this._updateCountryData(dataCollection);
+		this._updateCountryReports(dataCollection);
 	},
 
-	_updateCountryData(inputData){
+	_updateCountryReports: async function(inputData){
 		for(let i in inputData.casesDataArr){
 			const countryInfo = inputData.countryDataArr[i];
 			const casesData = inputData.casesDataArr.find(c => c.countryCode === countryInfo.countryCode);
@@ -20,7 +20,7 @@ var hourlyMaintenance = {
 			if(countryInfo && casesData && vaccinesData){
 				try{
 					const countryData = this._newCountryData(countryInfo, casesData, vaccinesData);
-					countryData.save();
+					await this._saveOrDiscard(countryData);
 				}
 				catch(err){
 					console.log(err.message);
@@ -29,7 +29,38 @@ var hourlyMaintenance = {
 		}
 	},
 
-	_initDataCollection: function(casesJson, vaccinesJson){
+	_saveOrDiscard: async function(newCountryData){
+		try{
+			const oldCountryData = await CountryData.findOne({countryCode: newCountryData.countryCode}).sort({updated: -1}).limit(1).exec();
+			console.log(oldCountryData);
+			console.log(newCountryData);
+			if(oldCountryData === null || oldCountryData.updated < newCountryData.updated){
+				newCountryData.save();
+			}
+		}
+		catch(err){
+			console.log(err.message);
+		}
+	},
+
+	_createCountryData: async function(inputData){
+		for(let i in inputData.casesDataArr){
+			const countryInfo = inputData.countryDataArr[i];
+			const casesData = inputData.casesDataArr.find(c => c.countryCode === countryInfo.countryCode);
+			const vaccinesData = inputData.vaccinesDataArr.find(v => v.countryCode === countryInfo.countryCode);
+
+			if(countryInfo && casesData && vaccinesData){
+				try{
+					return this._newCountryData(countryInfo, casesData, vaccinesData);
+				}
+				catch(err){
+					console.log(err.message);
+				}
+			}
+		}
+	},
+
+	_initDataCollection: async function(casesJson, vaccinesJson){
 
 		let data = {
 			countryDataArr: [],
@@ -53,14 +84,14 @@ var hourlyMaintenance = {
 		return data;
 	},
 
-	_countryDataFromJsonResult(casesData) {
+	_countryDataFromJsonResult: async function(casesData) {
 		return {
 			countryName: casesData['All'].country,
 			countryCode: casesData['All'].abbreviation,
 			population: casesData['All'].population,
 			squareKm: casesData['All'].sq_km_area,
 			continent: casesData['All'].continent,
-			updated: Date.now()
+			updated: casesData['All'].updated
 		};
 	},
 

@@ -4,8 +4,9 @@ const countryReport = require('../models/countryReport');
 const fatalityReport = require('../models/fatalityReport');
 
 let controllers = {
+	// Get public report for specific country by countrycode
 	reportByCountryCode: async function(req, res){
-		const report = await countryReport.getByCountryCode(req.params.countryCode.toUpperCase())
+		const report = await countryReport.getPublicReportByCountryCode(req.params.countryCode.toUpperCase())
 			.catch(function(err){
 				console.log(err.message);
 			});
@@ -21,15 +22,24 @@ let controllers = {
 		res.send(report);
 	},
 
+	// Get list of all public country reports
 	reportList: async function(req, res) {
-		const reports = await countryReport.listAll()
+		const reports = await countryReport.getAllPublicReports()
 			.catch(function (err) {
 				console.log(err.message);
 			});
 
+		if(!reports){
+			let err = {
+				message: `Could not create report list.`
+			};
+
+			res.status(400).send(err);
+		}
 		res.send(reports);
 	},
 
+	// Get fatality report. Supports queries for 'top', 'continent', 'minSize', 'maxSize'
 	fatalityReport: async function(req, res){
 		const reportList = await fatalityReport.getTopCountries(req.query)
 			.catch(function(err){

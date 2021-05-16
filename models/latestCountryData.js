@@ -17,17 +17,23 @@ let latestCountryData = {
 
     // Get the latest countryData entry from the database and commit it to memory in the _countryDataArr array
     set: async function(){
-        // Find distinct countryCodes
-        const countryCodes = await CountryData.distinct("countryCode").exec();
+        try{
+            // Find distinct countryCodes
+            const countryCodes = await CountryData.distinct("countryCode").exec();
 
-        // create and populate countryDataArr
-        let countryDataArr = [];
-        for(let i in countryCodes) {
-            const countryData = await CountryData.findOne({countryCode: countryCodes[i]}).sort({updated: -1}).exec();
-            countryDataArr.push(countryData);
+            // create and populate countryDataArr
+            let countryDataArr = [];
+            for(let i in countryCodes) {
+                const countryData = await CountryData.findOne({countryCode: countryCodes[i]}).sort({updated: -1}).exec();
+                countryDataArr.push(countryData);
+            }
+
+            this._countryDataArr = countryDataArr;
+        }
+        catch(err){
+            console.log(err.message);
         }
 
-        this._countryDataArr = countryDataArr;
     },
 
     // Get the latest countryData for a specific countryCode

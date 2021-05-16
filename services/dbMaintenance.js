@@ -5,18 +5,24 @@ const LatestContryData = require('../models/latestCountryData');
 const dbMaintenance = {
 	//Hourly maintenance - responsible for keeping the database up to date
 	run: async function(){
-		//Fetch data from the M-Media group covid API
-		const casesJsonResult = await covidClient.getAllCasesData();
-		const vaccinesJsonResult = await covidClient.getAllVaccinesData();
+		try{
+			//Fetch data from the M-Media group covid API
+			const casesJsonResult = await covidClient.getAllCasesData();
+			const vaccinesJsonResult = await covidClient.getAllVaccinesData();
 
-		//Compile json results into a compiled object
-		const dataCollection = await this._initDataCollection(casesJsonResult, vaccinesJsonResult);
+			//Compile json results into a compiled object
+			const dataCollection = await this._initDataCollection(casesJsonResult, vaccinesJsonResult);
 
-		//Run database update
-		await this._updateCountryData(dataCollection);
+			//Run database update
+			await this._updateCountryData(dataCollection);
 
-		//Update array of latest CountryData in memory
-		await LatestContryData.set();
+			//Update array of latest CountryData in memory
+			await LatestContryData.set();
+		}
+		catch(err){
+			console.log(err.message);
+		}
+
 	},
 
 	// Iterate over dataCollection to instantiate new countryData objects. Call _saveOrDiscard for each new countryData.
@@ -54,26 +60,32 @@ const dbMaintenance = {
 
 	// Compile the relevant data from the covid API into an object consisting of 3 arrays
 	_initDataCollection: async function(casesJson, vaccinesJson){
-		// The "Global" object in the casesJson response does not comply with the data model for the country-specific objects. We remove it for simplicity.
-		delete casesJson.Global;
+		try{
+			// The "Global" object in the casesJson response does not comply with the data model for the country-specific objects. We remove it for simplicity.
+			delete casesJson.Global;
 
-		let data = {
-			countryDataArr: [],
-			casesDataArr: [],
-			vaccinesDataArr: []
+			let data = {
+				countryDataArr: [],
+				casesDataArr: [],
+				vaccinesDataArr: []
+			}
+
+			// casesData and countryData are grabbed from the casesJson response (/cases endpoint).
+			for(let i in casesJson){
+				data.countryDataArr.push(await this._countryDataFromJsonResult(casesJson[i]));
+				data.casesDataArr.push(await this._casesDataFromJsonResult(casesJson[i]));
+			}
+
+			// vaccinesData comes from the vaccinesJson response (/vaccines endpoint).
+			for(let i in vaccinesJson){
+				data.vaccinesDataArr.push(await this._vaccinesDataFromJsonResult(vaccinesJson[i]));
+			}
+			return data;
+		}
+		catch(err){
+			console.log(err.message);
 		}
 
-		// casesData and countryData are grabbed from the casesJson response (/cases endpoint).
-		for(let i in casesJson){
-			data.countryDataArr.push(await this._countryDataFromJsonResult(casesJson[i]));
-			data.casesDataArr.push(await this._casesDataFromJsonResult(casesJson[i]));
-		}
-
-		// vaccinesData comes from the vaccinesJson response (/vaccines endpoint).
-		for(let i in vaccinesJson){
-			data.vaccinesDataArr.push(await this._vaccinesDataFromJsonResult(vaccinesJson[i]));
-		}
-		return data;
 	},
 
 	// Get the relevant facts about the country from the jsonResponse from json response from the /cases endpoint.

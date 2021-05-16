@@ -1,6 +1,6 @@
 // Imports
 const cron = require('node-cron');
-const hourlyDbMaintenance = require('./services/hourlyDbMaintenance');
+const dbMaintenance = require('./services/dbMaintenance');
 const express = require('express');
 const controller = require('./api/controllers');
 
@@ -26,9 +26,9 @@ app.get('/fatalityReport', function(req,res){
 })
 
 // Run database update and schedule hourly run
-hourlyDbMaintenance.run();
+dbMaintenance.run();
 cron.schedule('0 * * * *', function(){
-	hourlyDbMaintenance.run();
+	dbMaintenance.run();
 });
 
 // Start the app

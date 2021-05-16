@@ -2,7 +2,7 @@ const covidClient = require('./covidClient');
 const CountryData = require('../models/countryData');
 const LatestContryData = require('../models/latestCountryData');
 
-const hourlyDbMaintenance = {
+const dbMaintenance = {
 	//Hourly maintenance - responsible for keeping the database up to date
 	run: async function(){
 		//Fetch data from the M-Media group covid API
@@ -73,7 +73,6 @@ const hourlyDbMaintenance = {
 		for(let i in vaccinesJson){
 			data.vaccinesDataArr.push(await this._vaccinesDataFromJsonResult(vaccinesJson[i]));
 		}
-
 		return data;
 	},
 
@@ -136,6 +135,6 @@ const hourlyDbMaintenance = {
 	}
 }
 
-module.exports = hourlyDbMaintenance;
+module.exports = dbMaintenance;
 
 
